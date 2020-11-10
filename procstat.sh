@@ -9,7 +9,7 @@ cd /proc/
 # current_dir="$(pwd)/info.txt"
 
 # COMM=$(awk '/Name:/ {print $2}' status) # nome do pid
-#USER= ??# user name
+# USER= ?? ps -o uname= -p "${pid}"
 # PID=$(awk '/^Pid:/' status | tr -dc '0-9') # pid
 # MEM=$(awk '/VmSize:/' status | tr -dc '0-9') # quantidade de memoria total
 # RSS=$(awk '/VmRSS:/' status | tr -dc '0-9') # quantidade de memoria residente em memoria fisica
@@ -23,10 +23,17 @@ cd /proc/
 # echo -e $string > $current_dir
 # cat $current_dir
 
-# começar por ver quais e que temos autorização
+# tenho de tirar / de pid
 
 for pid in */; do
-    echo $pid
-    COMM=$(awk '/Name:/ {print $2}' $pid/status) # nome do pid
-    echo $COMM
+    if [[ -r "$pid/io" ]] && [[ -r "$pid/status" ]];then # checa se tanto io como status sao readable
+        echo $pid # pid
+        COMM=$(awk '/Name:/ {print $2}' $pid/status)
+        USER="$( ps -o uname= -p "${pid}" )"
+        READB=$(awk '/rchar:/' $pid/io | tr -dc '0-9')
+        echo $COMM
+        echo $USER
+        echo $READB
+        echo -e "\n"
+    fi
 done
