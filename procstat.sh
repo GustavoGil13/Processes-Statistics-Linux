@@ -1,16 +1,10 @@
 #!/bin/bash
-
-declare -a list_pid_info
 declare -a read_write
 declare -a pid_list
-
 LC_ALL=en_US.utf8
-
-# HEADER=("COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE")
 current_dir="$(pwd)/info.txt"
-
-# mudar para a diretoria /proc
 cd /proc/
+
 segundos=2
 
 i=0
@@ -28,8 +22,6 @@ for pid in */; do
 done
 
 sleep $segundos
-# echo ${pid_list[*]}
-# echo ${read_write[*]}
 
 i=0
 for pid in "${pid_list[@]}"; do
