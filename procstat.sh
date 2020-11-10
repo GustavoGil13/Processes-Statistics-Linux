@@ -2,6 +2,8 @@
 declare -a read_write
 declare -a pid_list
 LC_ALL=en_US.utf8
+
+
 current_dir="$(pwd)/info.txt"
 cd /proc/
 
