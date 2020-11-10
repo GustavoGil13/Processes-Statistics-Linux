@@ -6,7 +6,7 @@ declare -a pid_list
 
 LC_ALL=en_US.utf8
 
-# HEADER=("COMM" "USER" "PID" "MEM" "RSS" "READB" "WRITEB" "RATER" "RATEW" "DATE")
+
 current_dir="$(pwd)/info.txt"
 
 # mudar para a diretoria /proc
