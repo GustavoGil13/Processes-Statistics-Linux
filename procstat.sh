@@ -2,7 +2,6 @@
 declare -a read_write
 declare -a pid_list
 LC_ALL=en_US.utf8
-
 current_dir="$(pwd)/info.txt"
 cd /proc/
 
@@ -11,9 +10,7 @@ segundos=2
 i=0
 j=0
 for pid in */; do
-    PID=$(perl -pe 's/\///g' <<< "$pid")
-    # percorrer apenas as diretorias que contenham numeros
-    if [[ $PID =~ ^[0-9]+$ ]] && [[ -r "$pid/io" ]] && [[ -r "$pid/status" ]]; then
+    if [[ $pid = [0-9]* ]] && [[ -r "$pid/io" ]] && [[ -r "$pid/status" ]]; then
         pid_list[$i]=$pid
         READB=$(awk '/rchar:/' $pid/io | tr -dc '0-9')
         WRITEB=$(awk '/wchar:/' $pid/io | tr -dc '0-9')
@@ -34,7 +31,9 @@ for pid in "${pid_list[@]}"; do
     USER="$( ps -o uname= -p "${PID}" )"
     MEM=$(awk '/VmSize:/' $pid/status | tr -dc '0-9') # quantidade de memoria total
     RSS=$(awk '/VmRSS:/' $pid/status | tr -dc '0-9') # quantidade de memoria residente em memoria fisica
-    # DATE=??
+    DATE=$(ps -olstart= $PID | awk '{print $2,$3,$4}')
+    # d=$(date -d "$DATE" +%s) # datas em segundos
+    # echo $d
     
     READB1=${read_write[$i]}
     WRITEB1=${read_write[$(( $i+1 ))]}
@@ -44,10 +43,10 @@ for pid in "${pid_list[@]}"; do
     RATER=$( bc -l <<< $(( READB2 - READB1 ))/$segundos )
     RATEW=$( bc -l <<< $(( WRITEB2 - WRITEB1 ))/$segundos )
 
-    printf "%-20s %-10s %10s %10s %10s %15s %15s %15.2f %15.2f\n" $COMM $USER $PID $MEM $RSS $READB2 $WRITEB2 $RATER $RATEW >> $current_dir # $DATE
+    printf "%-20s %-10s %10s %10s %10s %15s %15s %15.2f %15.2f %20s\n" $COMM $USER $PID $MEM $RSS $READB2 $WRITEB2 $RATER $RATEW "$DATE" >> $current_dir
     i=$(( $i+2 ))
 done
 
-printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %15s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
+printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
 cat $current_dir
 rm $current_dir
