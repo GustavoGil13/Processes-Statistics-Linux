@@ -4,8 +4,10 @@ declare -a pid_list
 LC_ALL=en_US.utf8
 current_dir="$(pwd)/info.txt"
 cd /proc/
-
-segundos=2
+order_option=0
+cat_full_file=1
+segundos=${*: -1}
+# ${*: -1} ir buscar o ultimo valor 
 
 i=0
 j=0
@@ -47,6 +49,46 @@ for pid in "${pid_list[@]}"; do
     i=$(( $i+2 ))
 done
 
-printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
-cat $current_dir
+while getopts ":c:s:e:u:p:tdwrm" opt; do 
+    case ${opt} in
+        m)  
+            order_option=4
+            sort --key $order_option --numeric-sort -o $current_dir $current_dir
+            ;;
+        t)
+            order_option=5
+            sort --key $order_option --numeric-sort -o $current_dir $current_dir
+            ;;
+        d)
+            order_option=8
+            sort --key $order_option --numeric-sort -o $current_dir $current_dir
+            ;;
+        w)
+            order_option=9
+            sort --key $order_option --numeric-sort -o $current_dir $current_dir
+            ;;
+        r)
+            sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
+            ;;
+        p)
+            cat_full_file=0
+            printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
+            head -n $OPTARG $current_dir
+            ;;
+        \? )
+            echo "Usage: cmd [-c] [-s] [-e] [-u] [-p] [-m] [-t] [-d] [-w] [-r]"
+            cat_full_file=0
+            ;;
+        : )
+            echo "Invalid option: $OPTARG requires an argument"
+            cat_full_file=0
+        ;;
+    esac
+done
+
+if (( cat_full_file==1 )); then
+    printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
+    cat $current_dir
+fi
+
 rm $current_dir
