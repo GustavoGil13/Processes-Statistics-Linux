@@ -4,8 +4,9 @@ declare -a pid_list
 LC_ALL=en_US.utf8
 current_dir="$(pwd)/info.txt"
 cd /proc/
-order_option=0
-cat_full_file=1
+order_option=1
+cat_full_file=0
+head_print=0
 segundos=${*: -1}
 # ${*: -1} ir buscar o ultimo valor 
 
@@ -52,43 +53,57 @@ done
 while getopts ":c:s:e:u:p:tdwrm" opt; do 
     case ${opt} in
         m)  
+            cat_full_file=1
             order_option=4
             sort --key $order_option --numeric-sort -o $current_dir $current_dir
             ;;
         t)
+            cat_full_file=1
             order_option=5
             sort --key $order_option --numeric-sort -o $current_dir $current_dir
             ;;
         d)
+            cat_full_file=1
             order_option=8
             sort --key $order_option --numeric-sort -o $current_dir $current_dir
             ;;
         w)
+            cat_full_file=1
             order_option=9
             sort --key $order_option --numeric-sort -o $current_dir $current_dir
             ;;
         r)
+            cat_full_file=1
             sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
             ;;
         p)
-            cat_full_file=0
-            printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
-            head -n $OPTARG $current_dir
+            line_number=$OPTARG
+            head_print=1
+            # sed -i.bak -e "${line_number},\$d" $current_dir
+            # cat_full_file=1
+            # printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
+            # head -n $OPTARG $current_dir
             ;;
         \? )
             echo "Usage: cmd [-c] [-s] [-e] [-u] [-p] [-m] [-t] [-d] [-w] [-r]"
-            cat_full_file=0
             ;;
         : )
             echo "Invalid option: $OPTARG requires an argument"
-            cat_full_file=0
         ;;
     esac
 done
 
-if (( cat_full_file==1 )); then
+if (( cat_full_file==1 )) && (( head_print==0 )); then
     printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
     cat $current_dir
+elif (( head_print==1 )); then
+    printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
+    head -n $line_number $current_dir
+fi
+
+if (( $OPTIND==1 )); then
+    printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
+    sort -k1 $current_dir
 fi
 
 rm $current_dir
