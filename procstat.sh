@@ -4,11 +4,12 @@ declare -a pid_list
 LC_ALL=en_US.utf8
 current_dir="$(pwd)/info.txt"
 cd /proc/
+# getopts options
 order_option=1
 cat_full_file=0
 head_print=0
+
 segundos=${*: -1}
-# ${*: -1} ir buscar o ultimo valor 
 
 i=0
 j=0
@@ -55,22 +56,22 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
         m)  
             cat_full_file=1
             order_option=4
-            sort --key $order_option --numeric-sort -o $current_dir $current_dir
+            sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
             ;;
         t)
             cat_full_file=1
             order_option=5
-            sort --key $order_option --numeric-sort -o $current_dir $current_dir
+            sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
             ;;
         d)
             cat_full_file=1
             order_option=8
-            sort --key $order_option --numeric-sort -o $current_dir $current_dir
+            sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
             ;;
         w)
             cat_full_file=1
             order_option=9
-            sort --key $order_option --numeric-sort -o $current_dir $current_dir
+            sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
             ;;
         r)
             cat_full_file=1
@@ -79,10 +80,43 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
         p)
             line_number=$OPTARG
             head_print=1
-            # sed -i.bak -e "${line_number},\$d" $current_dir
-            # cat_full_file=1
-            # printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
-            # head -n $OPTARG $current_dir
+            ;;
+        c)  
+            cat_full_file=1
+            pattern=$OPTARG
+            counter=1
+            while IFS= read -r line
+            do
+                array=( $line )
+                word=${array[0]}
+                if [[ ! $word =~ $pattern ]]; then
+                    sed -i "${counter}d" $current_dir 
+                    counter=$(( $counter-1 ))
+                fi
+                counter=$(( $counter+1 ))
+            done < "$current_dir"
+            ;;
+        u)
+            cat_full_file=1
+            user_name=$OPTARG
+            counter=1
+            while IFS= read -r line
+            do
+                array=( $line )
+                word=${array[1]}
+                if [[ $word != $user_name ]]; then
+                    sed -i "${counter}d" $current_dir 
+                    counter=$(( $counter-1 ))
+                fi
+                counter=$(( $counter+1 ))
+            done < "$current_dir"
+
+            n_lines=$(wc -l $current_dir | awk '{print $1}')
+            if (( n_lines==0 )); then
+                echo "User not found"
+                rm $current_dir
+                exit 1
+            fi
             ;;
         \? )
             echo "Usage: cmd [-c] [-s] [-e] [-u] [-p] [-m] [-t] [-d] [-w] [-r]"
