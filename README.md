@@ -20,7 +20,7 @@ Example:
 ```sh
 ./procstat.sh -c "d.*" 2 
 ```
-prints all the processes that have a "d" in its name.
+the example will print all the processes that have a "d" in its name.
 
 prints all the processes that were created by the user_name.
 ```sh
