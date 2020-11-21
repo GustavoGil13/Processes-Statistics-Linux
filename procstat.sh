@@ -13,6 +13,7 @@ cat_full_file=0
 
 segundos=${*: -1}
 
+#-------------Sort Alfabético por defeito-------------#
 function sort_default
 {
     if (( $cat_full_file==0 )); then
@@ -21,7 +22,10 @@ function sort_default
 
     return 0
 }
+#-----------------------------------------------------#
 
+
+#-----------------Valor usado em '-u'-----------------#
 function get_user
 {   
     counter=1
@@ -45,7 +49,10 @@ function get_user
 
     return 0
 }
+#-------------------------------------------------------#
 
+
+#-----------------Valor usado em '-c'-------------------#
 function get_pattern
 {
     counter=1
@@ -69,7 +76,10 @@ function get_pattern
 
     return 0
 }
+#-------------------------------------------------------#
 
+
+#-----------------Valor usado em '-e'-------------------#
 function remove_smaller_dates
 {
     counter=1
@@ -94,7 +104,10 @@ function remove_smaller_dates
 
     return 0
 }
+#-------------------------------------------------------#
 
+
+#-----------------Valor usado em '-s'-------------------#
 function remove_bigger_dates
 {
     counter=1
@@ -119,6 +132,7 @@ function remove_bigger_dates
 
     return 0
 }
+#-------------------------------------------------------#
 
 i=0
 j=0
@@ -136,6 +150,7 @@ done
 
 sleep $segundos
 
+#----------------------------------------------------Valores de cada parâmetro e cálculos necessários----------------------------------------------------#
 i=0
 for pid in "${pid_list[@]}"; do
 
@@ -157,6 +172,7 @@ for pid in "${pid_list[@]}"; do
     printf "%-20s %-10s %10s %10s %10s %15s %15s %15.2f %15.2f %20s\n" $COMM $USER $PID $MEM $RSS $READB2 $WRITEB2 $RATER $RATEW "$DATE" >> $current_dir
     i=$(( $i+2 ))
 done
+#---------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 sort_default
 
@@ -198,12 +214,12 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
             sort_default
             get_user "$OPTARG"
             ;;
-        s)  # removes dates that are smaller then the date that is given 
+        s)  # removes dates that are smaller than the date that is given 
             sort_default
             given_date=$(date -d "$OPTARG" +%s)
             remove_smaller_dates "$given_date"
             ;;
-        e)  # removes dates that are bigger then the date that is given 
+        e)  # removes dates that are bigger than the date that is given 
             sort_default      
             given_date=$(date -d "$OPTARG" +%s)
             remove_bigger_dates "$given_date"
@@ -211,7 +227,7 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
         \? ) # if none of the corret arguments are passed
             echo "Usage: cmd [-c] [-s] [-e] [-u] [-p] [-m] [-t] [-d] [-w] [-r]"
             ;;
-        : ) # if a option that requires a argument does not get
+        : ) # if an option does not get an argument that it needs
             echo "Invalid option: $OPTARG requires an argument"
         ;;
     esac
