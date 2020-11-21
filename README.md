@@ -16,6 +16,7 @@ You can pass other arguments:
 
 prints all the processes that have the pattern in its name.
 Example:
+
 ```sh
 ./procstat.sh -c "d.*" 2 
 ```
@@ -40,6 +41,7 @@ The script has options to order the output:
 | -d | Rate of reading |
 | -w | Rate of writting |
 | -r | reverses the sort |
+
 
 By default the print is done alphabetical order.
 You can combine the options as you please.
