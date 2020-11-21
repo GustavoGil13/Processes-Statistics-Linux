@@ -13,7 +13,7 @@ and then
 The number of seconds is a mandatory argument.
 It is used by the program to sleep in order to calculate the rate of reading/writting.
 
-You can also pass another arguments to the program:
+You can pass other arguments:
 
 ./procstat.sh -c "d.*" 2 
 prints all the processes that have a "d" char in its name
@@ -24,7 +24,7 @@ prints all the processes that were created by the user_name
 ./procstat.sh -s "Sep 10 10:00" -e "Sep 20 18:00" 2
 prints all the processes that were created between this time frame. You can also use them seperatly
 
-Furthermore, there are options to order the output of the script:
+The script has options to order the output:
 
 ./procstat.sh -m
 sorts by the amount of fisical memory
