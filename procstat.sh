@@ -1,15 +1,124 @@
 #!/bin/bash
+
 declare -a read_write
 declare -a pid_list
+
 LC_ALL=en_US.utf8
 current_dir="$(pwd)/info.txt"
 cd /proc/
-# getopts options
+
 order_option=1
-cat_full_file=0
 head_print=0
+cat_full_file=0
 
 segundos=${*: -1}
+
+function sort_default
+{
+    if (( $cat_full_file==0 )); then
+        sort -k1 -o $current_dir $current_dir
+    fi
+
+    return 0
+}
+
+function get_user
+{   
+    counter=1
+    while IFS= read -r line
+    do
+        array=( $line )
+        word=${array[1]}
+        if [[ $word != $1 ]]; then
+            sed -i "${counter}d" $current_dir 
+            counter=$(( $counter-1 ))
+        fi
+        counter=$(( $counter+1 ))
+    done < "$current_dir"
+
+    n_lines=$(wc -l $current_dir | awk '{print $1}')
+    if (( n_lines==0 )); then
+        echo "User not found"
+        rm $current_dir
+        exit 1
+    fi
+
+    return 0
+}
+
+function get_pattern
+{
+    counter=1
+    while IFS= read -r line
+    do
+        array=( $line )
+        word=${array[0]}
+        if [[ ! $word =~ $1 ]]; then
+            sed -i "${counter}d" $current_dir 
+            counter=$(( $counter-1 ))
+        fi
+        counter=$(( $counter+1 ))
+    done < "$current_dir"
+
+    n_lines=$(wc -l $current_dir | awk '{print $1}')
+    if (( n_lines==0 )); then
+        echo "Pattern not found"
+        rm $current_dir
+        exit 1
+    fi
+
+    return 0
+}
+
+function remove_smaller_dates
+{
+    counter=1
+    while IFS= read -r line
+    do
+        array=( $line )
+        date1="${array[9]} ${array[10]} ${array[11]}"
+        data=$(date -d "$date1" +%s)
+        if (( $data <= $1 )); then
+            sed -i "${counter}d" $current_dir 
+            counter=$(( $counter-1 ))
+        fi
+        counter=$(( $counter+1 ))
+    done < "$current_dir"
+
+    n_lines=$(wc -l $current_dir | awk '{print $1}')
+    if (( n_lines==0 )); then
+        echo "No dates found"
+        rm $current_dir
+        exit 1
+    fi
+
+    return 0
+}
+
+function remove_bigger_dates
+{
+    counter=1
+    while IFS= read -r line
+    do
+        array=( $line )
+        date1="${array[9]} ${array[10]} ${array[11]}"
+        data=$(date -d "$date1" +%s)
+        if (( $data >= $1 )); then
+            sed -i "${counter}d" $current_dir 
+            counter=$(( $counter-1 ))
+        fi
+        counter=$(( $counter+1 ))
+    done < "$current_dir"
+
+    n_lines=$(wc -l $current_dir | awk '{print $1}')
+    if (( n_lines==0 )); then
+        echo "No dates found"
+        rm $current_dir
+        exit 1
+    fi
+
+    return 0
+}
 
 i=0
 j=0
@@ -31,13 +140,11 @@ i=0
 for pid in "${pid_list[@]}"; do
 
     PID=$(perl -pe 's/\///g' <<< "$pid") 
-    COMM=$(awk '/Name:/ {print $2}' $pid/status)
+    COMM=$(cat $pid/comm)
     USER="$( ps -o uname= -p "${PID}" )"
     MEM=$(awk '/VmSize:/' $pid/status | tr -dc '0-9') # quantidade de memoria total
     RSS=$(awk '/VmRSS:/' $pid/status | tr -dc '0-9') # quantidade de memoria residente em memoria fisica
     DATE=$(ps -olstart= $PID | awk '{print $2,$3,$4}')
-    # d=$(date -d "$DATE" +%s) # datas em segundos
-    # echo $d
     
     READB1=${read_write[$i]}
     WRITEB1=${read_write[$(( $i+1 ))]}
@@ -51,93 +158,71 @@ for pid in "${pid_list[@]}"; do
     i=$(( $i+2 ))
 done
 
+sort_default
+
 while getopts ":c:s:e:u:p:tdwrm" opt; do 
     case ${opt} in
-        m)  
+        m)  # sort by decreasing MEMORY  
             cat_full_file=1
             order_option=4
             sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
             ;;
-        t)
+        t)  # sort by decreasing RSS
             cat_full_file=1
             order_option=5
             sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
             ;;
-        d)
+        d)  # sort by decreasing RATER
             cat_full_file=1
             order_option=8
             sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
             ;;
-        w)
+        w)  # sort by decreasing RATEW
             cat_full_file=1
             order_option=9
             sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
             ;;
-        r)
+        r)  # reverse last sort
             cat_full_file=1
-            sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
+            sort --key $order_option --numeric-sort -o $current_dir $current_dir
             ;;
-        p)
+        p)  # print n lines
             line_number=$OPTARG
             head_print=1
             ;;
-        c)  
-            cat_full_file=1
-            pattern=$OPTARG
-            counter=1
-            while IFS= read -r line
-            do
-                array=( $line )
-                word=${array[0]}
-                if [[ ! $word =~ $pattern ]]; then
-                    sed -i "${counter}d" $current_dir 
-                    counter=$(( $counter-1 ))
-                fi
-                counter=$(( $counter+1 ))
-            done < "$current_dir"
+        c)  # print by user
+            sort_default
+            get_pattern "$OPTARG"
             ;;
-        u)
-            cat_full_file=1
-            user_name=$OPTARG
-            counter=1
-            while IFS= read -r line
-            do
-                array=( $line )
-                word=${array[1]}
-                if [[ $word != $user_name ]]; then
-                    sed -i "${counter}d" $current_dir 
-                    counter=$(( $counter-1 ))
-                fi
-                counter=$(( $counter+1 ))
-            done < "$current_dir"
-
-            n_lines=$(wc -l $current_dir | awk '{print $1}')
-            if (( n_lines==0 )); then
-                echo "User not found"
-                rm $current_dir
-                exit 1
-            fi
+        u)  # print by pattern
+            sort_default
+            get_user "$OPTARG"
             ;;
-        \? )
+        s)  # removes dates that are smaller then the date that is given 
+            sort_default
+            given_date=$(date -d "$OPTARG" +%s)
+            remove_smaller_dates "$given_date"
+            ;;
+        e)  # removes dates that are bigger then the date that is given 
+            sort_default      
+            given_date=$(date -d "$OPTARG" +%s)
+            remove_bigger_dates "$given_date"
+            ;;
+        \? ) # if none of the corret arguments are passed
             echo "Usage: cmd [-c] [-s] [-e] [-u] [-p] [-m] [-t] [-d] [-w] [-r]"
             ;;
-        : )
+        : ) # if a option that requires a argument does not get
             echo "Invalid option: $OPTARG requires an argument"
         ;;
     esac
 done
 
-if (( cat_full_file==1 )) && (( head_print==0 )); then
-    printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
-    cat $current_dir
-elif (( head_print==1 )); then
+if (( $head_print==1 )); then 
     printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
     head -n $line_number $current_dir
-fi
-
-if (( $OPTIND==1 )); then
+else
     printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
-    sort -k1 $current_dir
+    cat $current_dir
 fi
 
 rm $current_dir
