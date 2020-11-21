@@ -34,12 +34,12 @@ prints all the processes that were created between this time frame. You can also
 
 The script has options to order the output:
 
-| Options | Use |
+| Options | Sorts by |
 | ------ | ------ |
 | -m | the amount of fisical memory |
 | -t | RSS |
-| -d | Rate of reading |
-| -w | Rate of writting |
+| -d | rate of reading |
+| -w | rate of writting |
 | -r | reverses the sort |
 
 
