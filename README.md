@@ -31,30 +31,13 @@ prints all the processes that were created between this time frame. You can also
 
 The script has options to order the output:
 
-```sh
-./procstat.sh -m
-```
-sorts by the amount of fisical memory
-
-```sh
-./procstat.sh -t
-```
-sorts by RSS
-
-```sh
-./procstat.sh -d
-```
-sorts by Rate of reading
-
-```sh
-./procstat.sh -w 
-```
-sorts by Rate of writting
-
-```sh
-./procstat.sh -r
-```
-reverses the sort
+| Options | Use |
+| ------ | ------ |
+| -m | the amount of fisical memory |
+| -t | RSS |
+| -d | Rate of reading |
+| -w | Rate of writting |
+| -r | reverses the sort |
 
 By default the print is done alphabetical order.
 You can combine the options as you please.
