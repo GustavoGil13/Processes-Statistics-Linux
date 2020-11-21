@@ -14,7 +14,7 @@ It is used by the program to sleep in order to calculate the rate of reading/wri
 
 You can pass other arguments:
 
-prints all the processes that have the pattern in its name.
+prints all the processes wich the name follows a pattern.
 Example:
 
 ```sh
