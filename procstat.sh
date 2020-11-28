@@ -1,23 +1,42 @@
 #!/bin/bash
-
 declare -a read_write
 declare -a pid_list
 
 LC_ALL=en_US.utf8
-current_dir="$(pwd)/info.txt"
+txt_file="$(pwd)/info.txt"
 cd /proc/
 
 order_option=1
 head_print=0
 cat_full_file=0
+seconds=0
 
-segundos=${*: -1}
+#--------checks if the number of seconds are passed--------#
+if (( $#==0 )); then
+    echo "ERROR: Number of seconds to sleep MUST be passed"
+    exit 1
+elif (( $#==1 )) || [[ $1 = [0-9]* ]]; then
+    seconds=$1
+else
+    args=("$@")
+    for ((i = 1; i < ${#args[@]}; i++)); do
+        if [[ ${args[i]} = [0-9]* ]] && [[ ${args[$(($i-1))]} != "-p" ]]; then
+            seconds=${args[i]}
+        fi
+    done
 
-#--------------Sort Alfabético por defeito---------------#
+    if (( $seconds==0 )); then
+        echo "ERROR: Number of seconds to sleep MUST be passed"
+        exit 1
+    fi
+fi
+#--------------------------------------------------------#
+
+#--------------alphabetical sort by default-------------#
 function sort_default
 {
     if (( $cat_full_file==0 )); then
-        sort -k1 -o $current_dir $current_dir
+        sort -k1 -o $txt_file $txt_file
     fi
 
     return 0
@@ -25,7 +44,7 @@ function sort_default
 #-------------------------------------------------------#
 
 
-#-----------------Função usada para '-u'----------------#
+#-----------------Function used for '-u' argument----------------#
 function get_user
 {   
     counter=1
@@ -34,16 +53,16 @@ function get_user
         array=( $line )
         word=${array[1]}
         if [[ $word != $1 ]]; then
-            sed -i "${counter}d" $current_dir 
+            sed -i "${counter}d" $txt_file 
             counter=$(( $counter-1 ))
         fi
         counter=$(( $counter+1 ))
-    done < "$current_dir"
+    done < "$txt_file"
 
-    n_lines=$(wc -l $current_dir | awk '{print $1}')
-    if (( n_lines==0 )); then
+    n_lines=$(wc -l $txt_file | awk '{print $1}')
+    if (( $n_lines==0 )); then
         echo "User not found"
-        rm $current_dir
+        rm $txt_file
         exit 1
     fi
 
@@ -52,7 +71,7 @@ function get_user
 #------------------------------------------------------#
 
 
-#----------------Função usada para '-c'----------------#
+#----------------Function used for '-c' option----------------#
 function get_pattern
 {
     counter=1
@@ -61,16 +80,16 @@ function get_pattern
         array=( $line )
         word=${array[0]}
         if [[ ! $word =~ $1 ]]; then
-            sed -i "${counter}d" $current_dir 
+            sed -i "${counter}d" $txt_file 
             counter=$(( $counter-1 ))
         fi
         counter=$(( $counter+1 ))
-    done < "$current_dir"
+    done < "$txt_file"
 
-    n_lines=$(wc -l $current_dir | awk '{print $1}')
-    if (( n_lines==0 )); then
+    n_lines=$(wc -l $txt_file | awk '{print $1}')
+    if (( $n_lines==0 )); then
         echo "Pattern not found"
-        rm $current_dir
+        rm $txt_file
         exit 1
     fi
 
@@ -79,7 +98,7 @@ function get_pattern
 #-----------------------------------------------------#
 
 
-#-----------------Função usada para '-e'--------------#
+#-----------------Function used for '-e' option--------------#
 function remove_smaller_dates
 {
     counter=1
@@ -87,18 +106,18 @@ function remove_smaller_dates
     do
         array=( $line )
         date1="${array[9]} ${array[10]} ${array[11]}"
-        data=$(date -d "$date1" +%s)
-        if (( $data <= $1 )); then
-            sed -i "${counter}d" $current_dir 
+        date2=$(date -d "$date1" +%s)
+        if (( $date2 <= $1 )); then
+            sed -i "${counter}d" $txt_file 
             counter=$(( $counter-1 ))
         fi
         counter=$(( $counter+1 ))
-    done < "$current_dir"
+    done < "$txt_file"
 
-    n_lines=$(wc -l $current_dir | awk '{print $1}')
-    if (( n_lines==0 )); then
+    n_lines=$(wc -l $txt_file | awk '{print $1}')
+    if (( $n_lines==0 )); then
         echo "No dates found"
-        rm $current_dir
+        rm $txt_file
         exit 1
     fi
 
@@ -107,7 +126,7 @@ function remove_smaller_dates
 #-----------------------------------------------------#
 
 
-#---------------Função usada para '-s'----------------#
+#---------------Function used for '-s' option----------------#
 function remove_bigger_dates
 {
     counter=1
@@ -115,18 +134,18 @@ function remove_bigger_dates
     do
         array=( $line )
         date1="${array[9]} ${array[10]} ${array[11]}"
-        data=$(date -d "$date1" +%s)
-        if (( $data >= $1 )); then
-            sed -i "${counter}d" $current_dir 
+        date2=$(date -d "$date1" +%s)
+        if (( $date2 >= $1 )); then
+            sed -i "${counter}d" $txt_file 
             counter=$(( $counter-1 ))
         fi
         counter=$(( $counter+1 ))
-    done < "$current_dir"
+    done < "$txt_file"
 
-    n_lines=$(wc -l $current_dir | awk '{print $1}')
-    if (( n_lines==0 )); then
+    n_lines=$(wc -l $txt_file | awk '{print $1}')
+    if (( $n_lines==0 )); then
         echo "No dates found"
-        rm $current_dir
+        rm $txt_file
         exit 1
     fi
 
@@ -148,28 +167,28 @@ for pid in */; do
     fi
 done
 
-sleep $segundos
+sleep $seconds
 
-#----------------------------------------------------Valores de cada parâmetro e cálculos necessários----------------------------------------------------#
+#----------------------------------------------------Value of each parameter and the necessary calculations----------------------------------------------------#
 i=0
 for pid in "${pid_list[@]}"; do
 
     PID=$(perl -pe 's/\///g' <<< "$pid") 
     COMM=$(cat $pid/comm)
     USER="$( ps -o uname= -p "${PID}" )"
-    MEM=$(awk '/VmSize:/' $pid/status | tr -dc '0-9') # quantidade de memoria total
-    RSS=$(awk '/VmRSS:/' $pid/status | tr -dc '0-9') # quantidade de memoria residente em memoria fisica
+    MEM=$(awk '/VmSize:/' $pid/status | tr -dc '0-9')
+    RSS=$(awk '/VmRSS:/' $pid/status | tr -dc '0-9')
     DATE=$(ps -olstart= $PID | awk '{print $2,$3,$4}')
     
     READB1=${read_write[$i]}
     WRITEB1=${read_write[$(( $i+1 ))]}
-    READB2=$(awk '/rchar:/' $pid/io | tr -dc '0-9') # numero total de bytes de Input
-    WRITEB2=$(awk '/wchar:/' $pid/io | tr -dc '0-9') # numero total de bytes de Ouput
+    READB2=$(awk '/rchar:/' $pid/io | tr -dc '0-9')
+    WRITEB2=$(awk '/wchar:/' $pid/io | tr -dc '0-9')
 
-    RATER=$( bc -l <<< $(( READB2 - READB1 ))/$segundos )
-    RATEW=$( bc -l <<< $(( WRITEB2 - WRITEB1 ))/$segundos )
+    RATER=$( bc -l <<< $(( READB2 - READB1 ))/$seconds )
+    RATEW=$( bc -l <<< $(( WRITEB2 - WRITEB1 ))/$seconds )
 
-    printf "%-20s %-10s %10s %10s %10s %15s %15s %15.2f %15.2f %20s\n" $COMM $USER $PID $MEM $RSS $READB2 $WRITEB2 $RATER $RATEW "$DATE" >> $current_dir
+    printf "%-20s %-10s %10s %10s %10s %15s %15s %15.2f %15.2f %20s\n" $COMM $USER $PID $MEM $RSS $READB2 $WRITEB2 $RATER $RATEW "$DATE" >> $txt_file
     i=$(( $i+2 ))
 done
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -181,26 +200,26 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
         m)  # sort by decreasing MEMORY  
             cat_full_file=1
             order_option=4
-            sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
+            sort -r --key $order_option --numeric-sort -o $txt_file $txt_file
             ;;
         t)  # sort by decreasing RSS
             cat_full_file=1
             order_option=5
-            sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
+            sort -r --key $order_option --numeric-sort -o $txt_file $txt_file
             ;;
         d)  # sort by decreasing RATER
             cat_full_file=1
             order_option=8
-            sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
+            sort -r --key $order_option --numeric-sort -o $txt_file $txt_file
             ;;
         w)  # sort by decreasing RATEW
             cat_full_file=1
             order_option=9
-            sort -r --key $order_option --numeric-sort -o $current_dir $current_dir
+            sort -r --key $order_option --numeric-sort -o $txt_file $txt_file
             ;;
         r)  # reverse last sort
             cat_full_file=1
-            sort --key $order_option --numeric-sort -o $current_dir $current_dir
+            sort --key $order_option --numeric-sort -o $txt_file $txt_file
             ;;
         p)  # print n lines
             line_number=$OPTARG
@@ -235,10 +254,10 @@ done
 
 if (( $head_print==1 )); then 
     printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
-    head -n $line_number $current_dir
+    head -n $line_number $txt_file
 else
     printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
-    cat $current_dir
+    cat $txt_file
 fi
 
-rm $current_dir
+rm $txt_file
