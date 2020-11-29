@@ -72,7 +72,7 @@ function get_user
 
 
 #----------------Function used for '-c' option----------------#
-function get_pattern
+function get_from_expression
 {
     counter=1
     while IFS= read -r line
@@ -227,7 +227,7 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
             ;;
         c)  # print by user
             sort_default
-            get_pattern "$OPTARG"
+            get_from_expression "$OPTARG"
             ;;
         u)  # print by pattern
             sort_default
