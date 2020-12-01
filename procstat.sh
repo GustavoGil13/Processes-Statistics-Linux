@@ -178,7 +178,7 @@ for pid in "${pid_list[@]}"; do
     USER="$( ps -o uname= -p "${PID}" )"
     MEM=$(awk '/VmSize:/' $pid/status | tr -dc '0-9')
     RSS=$(awk '/VmRSS:/' $pid/status | tr -dc '0-9')
-    DATE=$(ps -olstart= $PID | awk '{print $2,$3,$4}')
+    DATE=$(ps -olstart= $PID | awk '{print $2,$3,$4}' | cut -d: -f1-2 )
     
     READB1=${read_write[$i]}
     WRITEB1=${read_write[$(( $i+1 ))]}
