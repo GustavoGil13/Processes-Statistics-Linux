@@ -13,7 +13,8 @@ seconds=0
 
 #--------checks if the number of seconds are passed--------#
 if (( $#==0 )); then
-    echo "ERROR: Number of seconds to sleep MUST be passed"
+    echo "ERROR: Number of seconds for sleep MUST be passed"
+    echo "TRY: ./procstat.sh number"
     exit 1
 elif (( $#==1 )) || [[ $1 = [0-9]* ]]; then
     seconds=$1
@@ -26,7 +27,8 @@ else
     done
 
     if (( $seconds==0 )); then
-        echo "ERROR: Number of seconds to sleep MUST be passed"
+        echo "ERROR: Number of seconds for sleep MUST be passed"
+        echo "TRY: ./procstat.sh number"
         exit 1
     fi
 fi
@@ -61,7 +63,7 @@ function get_user
 
     n_lines=$(wc -l $txt_file | awk '{print $1}')
     if (( $n_lines==0 )); then
-        echo "User not found"
+        echo "No PID's created by $1 were found"
         rm $txt_file
         exit 1
     fi
@@ -88,7 +90,7 @@ function get_from_expression
 
     n_lines=$(wc -l $txt_file | awk '{print $1}')
     if (( $n_lines==0 )); then
-        echo "Pattern not found"
+        echo "No PID's names with $1 were found"
         rm $txt_file
         exit 1
     fi
@@ -102,12 +104,14 @@ function get_from_expression
 function remove_smaller_dates
 {
     counter=1
+    d=$1
+    date1=$(date -d "$d" +%s)
     while IFS= read -r line
     do
         array=( $line )
-        date1="${array[9]} ${array[10]} ${array[11]}"
-        date2=$(date -d "$date1" +%s)
-        if (( $date2 <= $1 )); then
+        date2="${array[9]} ${array[10]} ${array[11]}"
+        date3=$(date -d "$date2" +%s)
+        if (( $date3 <= $date1 )); then
             sed -i "${counter}d" $txt_file 
             counter=$(( $counter-1 ))
         fi
@@ -116,7 +120,7 @@ function remove_smaller_dates
 
     n_lines=$(wc -l $txt_file | awk '{print $1}')
     if (( $n_lines==0 )); then
-        echo "No dates found"
+        echo "No PID's older than $d were found"
         rm $txt_file
         exit 1
     fi
@@ -130,12 +134,14 @@ function remove_smaller_dates
 function remove_bigger_dates
 {
     counter=1
+    d=$1
+    date1=$(date -d "$d" +%s)
     while IFS= read -r line
     do
         array=( $line )
-        date1="${array[9]} ${array[10]} ${array[11]}"
-        date2=$(date -d "$date1" +%s)
-        if (( $date2 >= $1 )); then
+        date2="${array[9]} ${array[10]} ${array[11]}"
+        date3=$(date -d "$date2" +%s)
+        if (( $date3 >= $date1 )); then
             sed -i "${counter}d" $txt_file 
             counter=$(( $counter-1 ))
         fi
@@ -144,7 +150,7 @@ function remove_bigger_dates
 
     n_lines=$(wc -l $txt_file | awk '{print $1}')
     if (( $n_lines==0 )); then
-        echo "No dates found"
+        echo "No PID's younger than $d were found"
         rm $txt_file
         exit 1
     fi
@@ -235,13 +241,11 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
             ;;
         s)  # removes dates that are smaller than the date that is given 
             sort_default
-            given_date=$(date -d "$OPTARG" +%s)
-            remove_smaller_dates "$given_date"
+            remove_smaller_dates "$OPTARG"
             ;;
         e)  # removes dates that are bigger than the date that is given 
             sort_default      
-            given_date=$(date -d "$OPTARG" +%s)
-            remove_bigger_dates "$given_date"
+            remove_bigger_dates "$OPTARG"
             ;;
         \? ) # if none of the corret arguments are passed
             echo "Usage: cmd [-c] [-s] [-e] [-u] [-p] [-m] [-t] [-d] [-w] [-r]"
