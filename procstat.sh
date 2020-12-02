@@ -10,28 +10,37 @@ order_option=1
 head_print=0
 cat_full_file=0
 seconds=0
+arg_counter=0
+args=("$@")
 
-#--------checks if the number of seconds are passed--------#
+#------------check if the number of seconds was passed and options dont conflit--------#
+
 if (( $#==0 )); then
-    echo "ERROR: Number of seconds for sleep MUST be passed"
-    echo "TRY: ./procstat.sh number"
+    echo "ERROR: number of seconds for sleep MUST be passed"
+    echo "TRY: ./procstat.sh seconds"
     exit 1
-elif (( $#==1 )) || [[ $1 = [0-9]* ]]; then
-    seconds=$1
-else
-    args=("$@")
-    for ((i = 1; i < ${#args[@]}; i++)); do
-        if [[ ${args[i]} = [0-9]* ]] && [[ ${args[$(($i-1))]} != "-p" ]]; then
-            seconds=${args[i]}
-        fi
-    done
-
-    if (( $seconds==0 )); then
-        echo "ERROR: Number of seconds for sleep MUST be passed"
-        echo "TRY: ./procstat.sh number"
-        exit 1
-    fi
+elif (( $#==1 )) && [[ ${args[-1]} == [0-9]* ]]; then
+    seconds=${args[-1]}
+elif [[ ${args[-1]} != [0-9]* ]] || [[ ${args[-2]} == "-p" ]]; then
+    echo "ERROR: number of seconds for sleep MUST be passed"
+    echo "TRY: ./procstat.sh seconds"
+    exit 1
 fi
+
+seconds=${args[-1]}
+
+for ((i = 0; i < ${#args[@]}; i++)); do
+    if [[ ${args[i]} == "-m" ]] || [[ ${args[i]} == "-w" ]] || [[ ${args[i]} == "-t" ]] || [[ ${args[i]} == "-d" ]]; then
+        arg_counter=$(($arg_counter+1))
+    fi
+done
+
+if (( $arg_counter>1 )); then
+    echo "ERROR: conflit of options"
+    echo "TRY: pass only one of this [-m] [-t] [-w] [-d]"
+    exit 1
+fi
+
 #--------------------------------------------------------#
 
 #--------------alphabetical sort by default-------------#
@@ -180,7 +189,8 @@ i=0
 for pid in "${pid_list[@]}"; do
 
     PID=$(perl -pe 's/\///g' <<< "$pid") 
-    COMM=$(cat $pid/comm)
+    COMM1=$(cat $pid/comm)
+    COMM="${COMM1// /_}"
     USER="$( ps -o uname= -p "${PID}" )"
     MEM=$(awk '/VmSize:/' $pid/status | tr -dc '0-9')
     RSS=$(awk '/VmRSS:/' $pid/status | tr -dc '0-9')
@@ -231,11 +241,11 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
             line_number=$OPTARG
             head_print=1
             ;;
-        c)  # print by user
+        c) # print by pattern  
             sort_default
             get_from_expression "$OPTARG"
             ;;
-        u)  # print by pattern
+        u)  # print by user
             sort_default
             get_user "$OPTARG"
             ;;
@@ -248,7 +258,7 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
             remove_bigger_dates "$OPTARG"
             ;;
         \? ) # if none of the corret arguments are passed
-            echo "Usage: cmd [-c] [-s] [-e] [-u] [-p] [-m] [-t] [-d] [-w] [-r]"
+            echo "Usage: cmd [-c] [-s] [-e] [-u] [-p] [-m] [-t] [-d] [-w] [-r] seconds"
             ;;
         : ) # if an option does not get an argument that it needs
             echo "Invalid option: $OPTARG requires an argument"
