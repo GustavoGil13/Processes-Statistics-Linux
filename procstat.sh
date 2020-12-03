@@ -6,28 +6,33 @@ LC_ALL=en_US.utf8
 txt_file="$(pwd)/info.txt"
 cd /proc/
 
-order_option=1
-head_print=0
-cat_full_file=0
-seconds=0
+order_column=1 # column to sort
+alpha_order=1 # sort by alpha
+head_print=0 # for print n lines
+reverse=0 # use in reverse to help
+
+#------------check if the number of seconds was passed--------#
+
 arg_counter=0
 args=("$@")
 
-#------------check if the number of seconds was passed and options dont conflit--------#
-
 if (( $#==0 )); then
     echo "ERROR: number of seconds for sleep MUST be passed"
-    echo "TRY: ./procstat.sh seconds"
+    echo "TRY: ./procstat.sh options seconds"
     exit 1
-elif (( $#==1 )) && [[ ${args[-1]} == [0-9]* ]]; then
-    seconds=${args[-1]}
-elif [[ ${args[-1]} != [0-9]* ]] || [[ ${args[-2]} == "-p" ]]; then
+elif (( $# >=2 )) && [[ ${args[-2]} == "-p" ]] && [[ ${args[-1]} == [0-9]* ]]; then
     echo "ERROR: number of seconds for sleep MUST be passed"
-    echo "TRY: ./procstat.sh seconds"
+    echo "TRY: ./procstat.sh options seconds"
+    exit 1
+elif [[ ${args[-1]} != [0-9]* ]]; then
+    echo "ERROR: number of seconds for sleep MUST be passed"
+    echo "TRY: ./procstat.sh options seconds"
     exit 1
 fi
 
 seconds=${args[-1]}
+
+#---------------check if the options passed make sense-------------#
 
 for ((i = 0; i < ${#args[@]}; i++)); do
     if [[ ${args[i]} == "-m" ]] || [[ ${args[i]} == "-w" ]] || [[ ${args[i]} == "-t" ]] || [[ ${args[i]} == "-d" ]]; then
@@ -46,13 +51,22 @@ fi
 #--------------alphabetical sort by default-------------#
 function sort_default
 {
-    if (( $cat_full_file==0 )); then
+    if (( $alpha_order==1 )); then
         sort -k1 -o $txt_file $txt_file
     fi
 
     return 0
 }
 #-------------------------------------------------------#
+
+#-------------Function used in options of sorting the file------#
+function sort_by_column
+{
+    sort -r --key $1 --numeric-sort -o $txt_file $txt_file
+    return 0
+}
+
+#----------------------------------------------------#
 
 
 #-----------------Function used for '-u' argument----------------#
@@ -168,6 +182,9 @@ function remove_bigger_dates
 }
 #----------------------------------------------------#
 
+
+#----------Grabing PID's--------------------#
+
 i=0
 j=0
 for pid in */; do
@@ -181,6 +198,7 @@ for pid in */; do
         j=$(( $j+2 ))
     fi
 done
+#------------------------------------------#
 
 sleep $seconds
 
@@ -194,7 +212,7 @@ for pid in "${pid_list[@]}"; do
     USER="$( ps -o uname= -p "${PID}" )"
     MEM=$(awk '/VmSize:/' $pid/status | tr -dc '0-9')
     RSS=$(awk '/VmRSS:/' $pid/status | tr -dc '0-9')
-    DATE=$(ps -olstart= $PID | awk '{print $2,$3,$4}' | cut -d: -f1-2 )
+    DATE=$(ps -olstart= $PID | awk '{print $2,$3,$4}' | cut -d: -f1-2)
     
     READB1=${read_write[$i]}
     WRITEB1=${read_write[$(( $i+1 ))]}
@@ -204,38 +222,36 @@ for pid in "${pid_list[@]}"; do
     RATER=$( bc -l <<< $(( READB2 - READB1 ))/$seconds )
     RATEW=$( bc -l <<< $(( WRITEB2 - WRITEB1 ))/$seconds )
 
-    printf "%-20s %-10s %10s %10s %10s %15s %15s %15.2f %15.2f %20s\n" $COMM $USER $PID $MEM $RSS $READB2 $WRITEB2 $RATER $RATEW "$DATE" >> $txt_file
+    printf "%-22s %-10s %6s %12s %12s %15s %15s %15.2f %15.2f %20s\n" $COMM $USER $PID $MEM $RSS $READB2 $WRITEB2 $RATER $RATEW "$DATE" >> $txt_file
     i=$(( $i+2 ))
 done
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 
-sort_default
-
 while getopts ":c:s:e:u:p:tdwrm" opt; do 
     case ${opt} in
         m)  # sort by decreasing MEMORY  
-            cat_full_file=1
-            order_option=4
-            sort -r --key $order_option --numeric-sort -o $txt_file $txt_file
+            alpha_order=0
+            order_column=4
+            sort_by_column "$order_column"
             ;;
         t)  # sort by decreasing RSS
-            cat_full_file=1
-            order_option=5
-            sort -r --key $order_option --numeric-sort -o $txt_file $txt_file
+            alpha_order=0
+            order_column=5
+            sort_by_column "$order_column"
             ;;
         d)  # sort by decreasing RATER
-            cat_full_file=1
-            order_option=8
-            sort -r --key $order_option --numeric-sort -o $txt_file $txt_file
+            alpha_order=0
+            order_column=8
+            sort_by_column "$order_column"
             ;;
         w)  # sort by decreasing RATEW
-            cat_full_file=1
-            order_option=9
-            sort -r --key $order_option --numeric-sort -o $txt_file $txt_file
+            alpha_order=0
+            order_column=9
+            sort_by_column "$order_column"
             ;;
         r)  # reverse last sort
-            cat_full_file=1
-            sort --key $order_option --numeric-sort -o $txt_file $txt_file
+            alpha_order=0
+            reverse=1
             ;;
         p)  # print n lines
             line_number=$OPTARG
@@ -266,11 +282,17 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
     esac
 done
 
+if (( $reverse==1 )) && (( $order_column==1 )); then
+    sort -r --key $order_column -o $txt_file $txt_file
+elif (( $reverse==1 )); then
+    sort --key $order_column --numeric-sort -o $txt_file $txt_file
+fi
+
 if (( $head_print==1 )); then 
-    printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
+    printf "%-22s %-10s %6s %12s %12s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
     head -n $line_number $txt_file
 else
-    printf "%-20s %-10s %10s %10s %10s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
+    printf "%-22s %-10s %6s %12s %12s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
     cat $txt_file
 fi
 
