@@ -20,11 +20,11 @@ if (( $#==0 )); then
     echo "ERROR: number of seconds for sleep MUST be passed"
     echo "TRY: ./procstat.sh options seconds"
     exit 1
-elif (( $# >=2 )) && [[ ${args[-2]} == "-p" ]] && [[ ${args[-1]} == [0-9]* ]]; then
+elif (( $# >=2 )) && [[ ${args[-2]} == "-p" ]] && [[ ${args[-1]} =~ ^[0-9]+$ ]]; then
     echo "ERROR: number of seconds for sleep MUST be passed"
     echo "TRY: ./procstat.sh options seconds"
     exit 1
-elif [[ ${args[-1]} != [0-9]* ]]; then
+elif ! [[ ${args[-1]} =~ ^[0-9]+$ ]]; then
     echo "ERROR: number of seconds for sleep MUST be passed"
     echo "TRY: ./procstat.sh options seconds"
     exit 1
@@ -46,7 +46,7 @@ if (( $arg_counter>1 )); then
     exit 1
 fi
 
-#--------------------------------------------------------#
+#------------------------------------------------------------------#
 
 #-------------Function used in sorting options------#
 function sort_by_column
@@ -87,7 +87,7 @@ function get_user
 
     return 0
 }
-#------------------------------------------------------#
+#---------------------------------------------------------------#
 
 
 #----------------Function used for '-c' option----------------#
@@ -117,7 +117,7 @@ function get_from_expression
 #-----------------------------------------------------#
 
 
-#-----------------Function used for '-e' option--------------#
+#---------------Function used for '-e' option--------------#
 function remove_smaller_dates
 {
     counter=1
@@ -183,20 +183,23 @@ i=0
 j=0
 for pid in */; do
     if [[ $pid = [0-9]* ]] && [[ -r "$pid/io" ]] && [[ -r "$pid/status" ]]; then
+
         pid_list[$i]=$pid
         READB=$(awk '/rchar:/' $pid/io | tr -dc '0-9')
         WRITEB=$(awk '/wchar:/' $pid/io | tr -dc '0-9')
         read_write[$j]=$READB
         read_write[$(( $j+1 ))]=$WRITEB
+
         i=$(( $i+1 ))
         j=$(( $j+2 ))
+
     fi
 done
 #------------------------------------------#
 
 sleep $seconds
 
-#----------------------------------------------------Value of each parameter and the necessary calculations----------------------------------------------------#
+#----------------------------------------------------Value of each parameter and the necessary calculations------------------------------------------------#
 i=0
 for pid in "${pid_list[@]}"; do
 
@@ -217,7 +220,9 @@ for pid in "${pid_list[@]}"; do
     RATEW=$( bc -l <<< $(( WRITEB2 - WRITEB1 ))/$seconds )
 
     printf "%-22s %-10s %6s %12s %12s %15s %15s %15.2f %15.2f %20s\n" $COMM $USER $PID $MEM $RSS $READB2 $WRITEB2 $RATER $RATEW "$DATE" >> $txt_file
+    
     i=$(( $i+2 ))
+
 done
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 
@@ -249,7 +254,12 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
             ;;
         p)  # print n lines
             line_number=$OPTARG
+            if ! [[ $line_number =~ ^[0-9]+$ ]]; then
+                echo "Invalid option: $line_number must be a number"
+                exit 1
+            fi
             head_print=1
+            sort_by_column
             ;;
         c) # print by pattern  
             sort_by_column
@@ -269,9 +279,11 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
             ;;
         \? ) # if none of the corret arguments are passed
             echo "Usage: cmd [-c] [-s] [-e] [-u] [-p] [-m] [-t] [-d] [-w] [-r] seconds"
+            exit 1
             ;;
         : ) # if an option does not get an argument that it needs
             echo "Invalid option: $OPTARG requires an argument"
+            exit 1
         ;;
     esac
 done
