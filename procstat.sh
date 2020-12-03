@@ -226,6 +226,8 @@ for pid in "${pid_list[@]}"; do
 done
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 
+sort -k1 -o $txt_file $txt_file
+
 while getopts ":c:s:e:u:p:tdwrm" opt; do 
     case ${opt} in
         m)  # sort by decreasing MEMORY  
