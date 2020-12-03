@@ -48,21 +48,15 @@ fi
 
 #--------------------------------------------------------#
 
-#--------------alphabetical sort by default-------------#
-function sort_default
-{
-    if (( $alpha_order==1 )); then
-        sort -k1 -o $txt_file $txt_file
-    fi
-
-    return 0
-}
-#-------------------------------------------------------#
-
-#-------------Function used in options of sorting the file------#
+#-------------Function used in sorting options------#
 function sort_by_column
 {
-    sort -r --key $1 --numeric-sort -o $txt_file $txt_file
+    if (( $alpha_order==1 )); then
+        sort -k1 -o $txt_file $txt_file    
+    else
+        sort -r --key $1 --numeric-sort -o $txt_file $txt_file
+    fi
+
     return 0
 }
 
@@ -258,19 +252,19 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
             head_print=1
             ;;
         c) # print by pattern  
-            sort_default
+            sort_by_column
             get_from_expression "$OPTARG"
             ;;
         u)  # print by user
-            sort_default
+            sort_by_column
             get_user "$OPTARG"
             ;;
         s)  # removes dates that are smaller than the date that is given 
-            sort_default
+            sort_by_column
             remove_smaller_dates "$OPTARG"
             ;;
         e)  # removes dates that are bigger than the date that is given 
-            sort_default      
+            sort_by_column     
             remove_bigger_dates "$OPTARG"
             ;;
         \? ) # if none of the corret arguments are passed
