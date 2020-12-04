@@ -52,7 +52,7 @@ fi
 function sort_by_column
 {
     if (( $alpha_order==1 )); then
-        sort -k1 -o $txt_file $txt_file    
+        sort --key $1 -o $txt_file $txt_file    
     else
         sort -r --key $1 --numeric-sort -o $txt_file $txt_file
     fi
@@ -226,7 +226,7 @@ for pid in "${pid_list[@]}"; do
 done
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 
-sort -k1 -o $txt_file $txt_file
+sort_by_column "$order_column"
 
 while getopts ":c:s:e:u:p:tdwrm" opt; do 
     case ${opt} in
@@ -251,7 +251,6 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
             sort_by_column "$order_column"
             ;;
         r)  # reverse last sort
-            alpha_order=0
             reverse=1
             ;;
         p)  # print n lines
@@ -261,14 +260,14 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
                 exit 1
             fi
             head_print=1
-            sort_by_column
+            sort_by_column "$order_column"
             ;;
         c) # print by pattern  
-            sort_by_column
+            sort_by_column "$order_column"
             get_from_expression "$OPTARG"
             ;;
         u)  # print by user
-            sort_by_column
+            sort_by_column "$order_column"
             get_user "$OPTARG"
             ;;
         s)  # removes dates that are smaller than the date that is given 
@@ -276,7 +275,7 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
             remove_smaller_dates "$OPTARG"
             ;;
         e)  # removes dates that are bigger than the date that is given 
-            sort_by_column     
+            sort_by_column "$order_column"
             remove_bigger_dates "$OPTARG"
             ;;
         \? ) # if none of the corret arguments are passed
