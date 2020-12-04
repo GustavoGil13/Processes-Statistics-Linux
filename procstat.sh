@@ -64,7 +64,7 @@ function sort_by_column
 
 
 #-----------------Function used for '-u' argument----------------#
-function get_user
+function get_from_user
 {   
     counter=1
     while IFS= read -r line
@@ -107,7 +107,7 @@ function get_from_expression
 
     n_lines=$(wc -l $txt_file | awk '{print $1}')
     if (( $n_lines==0 )); then
-        echo "No PID's names with $1 were found"
+        echo "No PID's names containing $1 were found"
         rm $txt_file
         exit 1
     fi
@@ -117,7 +117,7 @@ function get_from_expression
 #-----------------------------------------------------#
 
 
-#---------------Function used for '-e' option--------------#
+#---------------Function used for '-s' option--------------#
 function remove_smaller_dates
 {
     counter=1
@@ -147,7 +147,7 @@ function remove_smaller_dates
 #-----------------------------------------------------#
 
 
-#---------------Function used for '-s' option----------------#
+#---------------Function used for '-e' option----------------#
 function remove_bigger_dates
 {
     counter=1
@@ -256,7 +256,7 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
         p)  # print n lines
             line_number=$OPTARG
             if ! [[ $line_number =~ ^[0-9]+$ ]]; then
-                echo "Invalid option: $line_number must be a number"
+                echo "Invalid option: $line_number must be a integer number"
                 exit 1
             fi
             head_print=1
@@ -268,7 +268,7 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
             ;;
         u)  # print by user
             sort_by_column "$order_column"
-            get_user "$OPTARG"
+            get_from_user "$OPTARG"
             ;;
         s)  # removes dates that are smaller than the date that is given 
             sort_by_column
