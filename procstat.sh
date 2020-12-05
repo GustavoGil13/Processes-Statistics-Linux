@@ -271,10 +271,11 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
             get_from_user "$OPTARG"
             ;;
         s)  # removes dates that are smaller than the date that is given 
-            sort_by_column
+            sort_by_column "$order_column"
             remove_smaller_dates "$OPTARG"
             ;;
         e)  # removes dates that are bigger than the date that is given 
+
             sort_by_column "$order_column"
             remove_bigger_dates "$OPTARG"
             ;;
