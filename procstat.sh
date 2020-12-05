@@ -6,10 +6,10 @@ LC_ALL=en_US.utf8
 txt_file="$(pwd)/info.txt"
 cd /proc/
 
-order_column=1 # column to sort
-alpha_order=1 # sort by alpha
-head_print=0 # for print n lines
-reverse=0 # use in reverse to help
+order_column=1
+alpha_order=1
+head_print=0
+reverse=0
 
 #------------check if the number of seconds was passed--------#
 
@@ -59,7 +59,6 @@ function sort_by_column
 
     return 0
 }
-
 #----------------------------------------------------#
 
 
@@ -184,14 +183,18 @@ j=0
 for pid in */; do
     if [[ $pid = [0-9]* ]] && [[ -r "$pid/io" ]] && [[ -r "$pid/status" ]]; then
 
-        pid_list[$i]=$pid
-        READB=$(awk '/rchar:/' $pid/io | tr -dc '0-9')
-        WRITEB=$(awk '/wchar:/' $pid/io | tr -dc '0-9')
-        read_write[$j]=$READB
-        read_write[$(( $j+1 ))]=$WRITEB
+        MEM=$(awk '/VmSize:/' $pid/status | tr -dc '0-9')
+        RSS=$(awk '/VmRSS:/' $pid/status | tr -dc '0-9')
 
-        i=$(( $i+1 ))
-        j=$(( $j+2 ))
+        if ! [[ -z $MEM ]] && ! [[ -z $RSS ]]; then
+            pid_list[$i]=$pid
+            READB=$(awk '/rchar:/' $pid/io | tr -dc '0-9')
+            WRITEB=$(awk '/wchar:/' $pid/io | tr -dc '0-9')
+            read_write[$j]=$READB
+            read_write[$(( $j+1 ))]=$WRITEB
+            i=$(( $i+1 ))
+            j=$(( $j+2 ))
+        fi
 
     fi
 done
@@ -219,10 +222,9 @@ for pid in "${pid_list[@]}"; do
     RATER=$( bc -l <<< $(( READB2 - READB1 ))/$seconds )
     RATEW=$( bc -l <<< $(( WRITEB2 - WRITEB1 ))/$seconds )
 
-    printf "%-22s %-10s %6s %12s %12s %15s %15s %15.2f %15.2f %20s\n" $COMM $USER $PID $MEM $RSS $READB2 $WRITEB2 $RATER $RATEW "$DATE" >> $txt_file
-    
-    i=$(( $i+2 ))
+    printf "%-22s %-17s %10s %12s %12s %15s %15s %15.2f %15.2f %20s\n" $COMM $USER $PID $MEM $RSS $READB2 $WRITEB2 $RATER $RATEW "$DATE" >> $txt_file
 
+    i=$(( $i+2 ))
 done
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 
@@ -297,10 +299,10 @@ elif (( $reverse==1 )); then
 fi
 
 if (( $head_print==1 )); then 
-    printf "%-22s %-10s %6s %12s %12s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
+    printf "%-22s %-17s %10s %12s %12s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
     head -n $line_number $txt_file
 else
-    printf "%-22s %-10s %6s %12s %12s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
+    printf "%-22s %-17s %10s %12s %12s %15s %15s %15s %15s %20s\n" COMM USER PID MEM RSS READB WRITEB RATER RATEW DATE
     cat $txt_file
 fi
 
