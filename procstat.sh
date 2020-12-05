@@ -18,15 +18,15 @@ args=("$@")
 
 if (( $#==0 )); then
     echo "ERROR: number of seconds for sleep MUST be passed"
-    echo "TRY: ./procstat.sh options seconds"
+    echo "Usage: ./procstat.sh options seconds"
     exit 1
 elif (( $# >=2 )) && [[ ${args[-2]} == "-p" ]] && [[ ${args[-1]} =~ ^[0-9]+$ ]]; then
     echo "ERROR: number of seconds for sleep MUST be passed"
-    echo "TRY: ./procstat.sh options seconds"
+    echo "Usage: ./procstat.sh options seconds"
     exit 1
 elif ! [[ ${args[-1]} =~ ^[0-9]+$ ]]; then
     echo "ERROR: number of seconds for sleep MUST be passed"
-    echo "TRY: ./procstat.sh options seconds"
+    echo "Usage: ./procstat.sh options seconds"
     exit 1
 fi
 
@@ -42,7 +42,7 @@ done
 
 if (( $arg_counter>1 )); then
     echo "ERROR: conflit of options"
-    echo "TRY: pass only one of this [-m] [-t] [-w] [-d]"
+    echo "Usage: pass only one of this [-m] [-t] [-w] [-d]"
     exit 1
 fi
 
@@ -260,6 +260,7 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
             line_number=$OPTARG
             if ! [[ $line_number =~ ^[0-9]+$ ]]; then
                 echo "Invalid option: $line_number must be a integer number"
+                rm $txt_file
                 exit 1
             fi
             head_print=1
@@ -284,10 +285,12 @@ while getopts ":c:s:e:u:p:tdwrm" opt; do
             ;;
         \? ) # if none of the corret arguments are passed
             echo "Usage: cmd [-c] [-s] [-e] [-u] [-p] [-m] [-t] [-d] [-w] [-r] seconds"
+            rm $txt_file
             exit 1
             ;;
         : ) # if an option does not get an argument that it needs
             echo "Invalid option: $OPTARG requires an argument"
+            rm $txt_file
             exit 1
         ;;
     esac
