@@ -205,26 +205,27 @@ sleep $seconds
 #----------------------------------------------------Value of each parameter and the necessary calculations------------------------------------------------#
 i=0
 for pid in "${pid_list[@]}"; do
+    if [[ -r "$pid/io" ]] && [[ -r "$pid/status" ]]; then
+        PID=$(perl -pe 's/\///g' <<< "$pid") 
+        COMM1=$(cat $pid/comm)
+        COMM="${COMM1// /_}"
+        USER="$( ps -o uname= -p "${PID}" )"
+        MEM=$(awk '/VmSize:/' $pid/status | tr -dc '0-9')
+        RSS=$(awk '/VmRSS:/' $pid/status | tr -dc '0-9')
+        DATE=$(ps -olstart= $PID | awk '{print $2,$3,$4}' | cut -d: -f1-2)
+        
+        READB1=${read_write[$i]}
+        WRITEB1=${read_write[$(( $i+1 ))]}
+        READB2=$(awk '/rchar:/' $pid/io | tr -dc '0-9')
+        WRITEB2=$(awk '/wchar:/' $pid/io | tr -dc '0-9')
 
-    PID=$(perl -pe 's/\///g' <<< "$pid") 
-    COMM1=$(cat $pid/comm)
-    COMM="${COMM1// /_}"
-    USER="$( ps -o uname= -p "${PID}" )"
-    MEM=$(awk '/VmSize:/' $pid/status | tr -dc '0-9')
-    RSS=$(awk '/VmRSS:/' $pid/status | tr -dc '0-9')
-    DATE=$(ps -olstart= $PID | awk '{print $2,$3,$4}' | cut -d: -f1-2)
-    
-    READB1=${read_write[$i]}
-    WRITEB1=${read_write[$(( $i+1 ))]}
-    READB2=$(awk '/rchar:/' $pid/io | tr -dc '0-9')
-    WRITEB2=$(awk '/wchar:/' $pid/io | tr -dc '0-9')
+        RATER=$( bc -l <<< $(( READB2 - READB1 ))/$seconds )
+        RATEW=$( bc -l <<< $(( WRITEB2 - WRITEB1 ))/$seconds )
 
-    RATER=$( bc -l <<< $(( READB2 - READB1 ))/$seconds )
-    RATEW=$( bc -l <<< $(( WRITEB2 - WRITEB1 ))/$seconds )
+        printf "%-22s %-17s %10s %12s %12s %15s %15s %15.2f %15.2f %20s\n" $COMM $USER $PID $MEM $RSS $READB2 $WRITEB2 $RATER $RATEW "$DATE" >> $txt_file
 
-    printf "%-22s %-17s %10s %12s %12s %15s %15s %15.2f %15.2f %20s\n" $COMM $USER $PID $MEM $RSS $READB2 $WRITEB2 $RATER $RATEW "$DATE" >> $txt_file
-
-    i=$(( $i+2 ))
+        i=$(( $i+2 ))
+    fi
 done
 #---------------------------------------------------------------------------------------------------------------------------------------------------------#
 
