@@ -1,4 +1,4 @@
-# Trabalho1-SO-2020
+# Bash - statistics of running processes on Linux
 
 A Bash script that gets the statistics of processes in Ubuntu.
 
