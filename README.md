@@ -36,7 +36,7 @@ The script has options to order the output:
 
 | Options | Sorts by |
 | ------ | ------ |
-| -m | the amount of fisical memory |
+| -m | the amount of physical memory |
 | -t | RSS |
 | -d | rate of reading |
 | -w | rate of writting |
