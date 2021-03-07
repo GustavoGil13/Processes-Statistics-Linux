@@ -1,4 +1,4 @@
-# Bash - statistics of running processes on Linux
+# Bash - statistics of running processes in Linux
 
 A Bash script that gets the statistics of processes in Ubuntu.
 
